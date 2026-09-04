@@ -1,7 +1,7 @@
 # CTCAE Adverse Event Grader
 
-> **Domain:** Diagnostic Radiology & Medical Imaging AI  
-> **Reference Guidelines & Standards:** `American College of Radiology (ACR) RADS & Fleischner Society`
+> **Domain:** Diagnostic Radiology & Medical Imaging AI
+> **Reference Guidelines & Standards:** American College of Radiology (ACR) RADS & Fleischner Society
 
 <div align="center">
 
@@ -16,100 +16,139 @@
 
 ---
 
-## 📖 What It Does
+## What It Does
 
-CTCAE Adverse Event Grader
-CTCAE v5 grading for 20 common AEs from lab/vital thresholds.
-Points-based score with tiered action thresholds. Stdlib only.
+CTCAE v5 grading for common adverse events from lab/vital thresholds. Points-based scoring with tiered action thresholds. Includes a multi-agent supervisor system with HMAC-SHA256 tamper-evident audit trail and zero-PHI outbound guard.
 
 ---
 
-## ⚙️ Key Capabilities & Algorithmic Modules
+## Installation
 
-### 🔬 Analytical Functions
-
-- **`calculate_score()`**: present: dict factor->bool or row dict with 1/0.
-- **`assess_row()`** — calculates and validates assess_row parameters.
-- **`process_csv()`** — calculates and validates process_csv parameters.
-- **`build_parser()`** — calculates and validates build_parser parameters.
-- **`main()`** — calculates and validates main parameters.
-
----
-
-## 📐 Mathematical Formulation & Logic
-
-```text
-  return calculate_score(present)
-  res=calculate_score(present); print(res); return 0
-```
-
----
-
-## 💻 CLI Quickstart & Usage
-
-### 1. Guided Interactive Mode
+### Option 1: pip
 ```bash
-python cli.py
+pip install -r requirements.txt
 ```
 
-### 2. Direct Parameterized Evaluation
-```bash
-python cli.py --task-id <value> --target <value> --primary <value> --secondary <value>
-```
-
-### Parameter Reference
-- `--task-id`: Specifies input measurement or parameter value.
-- `--target`: Specifies input measurement or parameter value.
-- `--primary`: Specifies input measurement or parameter value.
-- `--secondary`: Specifies input measurement or parameter value.
-- `--critical`: Specifies input measurement or parameter value.
-- `--status`: Specifies input measurement or parameter value.
-- `--input`: Specifies input measurement or parameter value.
-- `--output`: Specifies input measurement or parameter value.
-
-### Input Data Schema
-
-| Field | Description | Requirement |
-|:------|:------------|:------------|
-| `patient_id` | Parameter / observation metric | Required |
-| `age` | Parameter / observation metric | Required |
-| `sex` | Parameter / observation metric | Required |
-| `prior_vte` | Parameter / observation metric | Required |
-| `cancer` | Parameter / observation metric | Required |
-| `immobility` | Parameter / observation metric | Required |
-| `surgery` | Parameter / observation metric | Required |
-
----
-
-## 🛡️ Security & Enterprise Architecture
-
-* **Zero-PHI Outbound Interceptor:** Active AST and regex inspection blocking SSNs, MRNs, phone numbers, and patient identifiers.
-* **Tamper-Evident HMAC-SHA256 Audit Trail:** Chained, cryptographically signed logs for every evaluation and state transition.
-* **Air-Gapped LLM Reasoning Adapter:** Agnostic integration for local Ollama instances (`llama3`, `mistral`), Claude 3.5 Sonnet, GPT-4o, and deterministic test mocks.
-* **Active Learning Bayesian Calibration:** Dynamic tracker updating worker reliability weights and monitoring Brier calibration drift.
-* **FastAPI & Prometheus Telemetry:** Exposes OpenAPI 3.1 REST endpoints and operational Prometheus metrics (`/metrics`).
-
----
-
-## 🧪 Testing & Verification
-
-Run the automated test suite:
-
-```bash
-pytest -v
-```
-
-Execute high-throughput batch simulation benchmarks:
-
-```bash
-python simulator.py --tasks 1000 --concurrency 8
-```
-
----
-
-## 🐳 Container Deployment
-
+### Option 2: Docker
 ```bash
 docker build -t ctcae-adverse-event-grader .
-docker run -p 8000:8000 ctcae-adverse-event-grader
+docker run -p 8000:8000 -e AUDIT_SECRET_KEY=your-secret-key ctcae-adverse-event-grader
 ```
+
+### Option 3: Docker Compose
+```bash
+docker-compose up -d
+```
+
+---
+
+## Usage
+
+### CLI Commands
+
+#### Single Evaluation
+```bash
+python cli.py audit --task-id TASK-001 --primary 28.5 --secondary 14.2
+```
+
+#### Batch CSV Processing
+```bash
+python cli.py batch -i input.csv -o results.csv
+```
+
+#### Chat Query
+```bash
+python cli.py chat "Explain the grading criteria"
+```
+
+#### Verify Audit Trail
+```bash
+python cli.py verify-audit
+```
+
+#### Start API Server
+```bash
+python cli.py serve --host 127.0.0.1 --port 8000
+```
+
+### Core Scoring Module
+```python
+import ctcae
+
+# Calculate score from patient factors
+result = ctcae.calculate_score({'age': 68, 'sex': 'M', 'cancer': 1})
+print(result)  # {'score': 3, 'tier': 'moderate', 'detail': {...}}
+
+# Process CSV file
+results = ctcae.process_csv('input.csv', 'output.csv')
+```
+
+### API Endpoints
+
+| Endpoint | Method | Description |
+|:---------|:-------|:------------|
+| `/health` | GET | Health check |
+| `/metrics` | GET | Prometheus-style metrics |
+| `/api/audit` | POST | Submit task for evaluation |
+| `/api/chat` | POST | Query the supervisor |
+| `/api/audit/logs` | GET | Get audit trail |
+
+---
+
+## Configuration
+
+| Environment Variable | Description | Default |
+|:---------------------|:------------|:--------|
+| `AUDIT_SECRET_KEY` | HMAC key for audit trail integrity | Random (ephemeral) |
+| `MODEL_PROVIDER` | LLM provider (`mock`, `ollama`, `claude`, `openai`) | `mock` |
+
+> **Security Note:** Always set `AUDIT_SECRET_KEY` in production. Without it, a random key is generated on startup and audit integrity cannot be verified across restarts.
+
+---
+
+## Testing
+
+```bash
+# Run all tests
+pytest -v
+
+# Run with coverage
+pytest -v --cov=agents --cov=ctcae
+
+# Run simulation benchmark
+python simulator.py 1000
+```
+
+---
+
+## Architecture
+
+- **`ctcae.py`** — Core scoring engine with points-based algorithm
+- **`cli.py`** — Command-line interface
+- **`agents/`** — Multi-agent supervisor system:
+  - `supervisor.py` — Orchestrates worker evaluations
+  - `workers.py` — Specialized domain workers (QC, Safety, Protocol)
+  - `base.py` — PHI guard, HMAC audit trail, security utilities
+  - `models.py` — Pydantic data models
+  - `api.py` — FastAPI REST endpoints
+  - `llm_factory.py` — LLM provider abstraction
+  - `metrics.py` — Prometheus metrics exporter
+  - `learning.py` — Bayesian calibration engine
+  - `streamer.py` — WebSocket telemetry broadcaster
+- **`enrichment.py`** — Extended feature engines
+- **`simulator.py`** — High-throughput stress testing
+
+---
+
+## Security Features
+
+- **Zero-PHI Outbound Guard:** AST and regex inspection blocking SSNs, MRNs, phone numbers, emails, and patient identifiers
+- **HMAC-SHA256 Tamper-Evident Audit Trail:** Chained, cryptographically signed logs with integrity verification
+- **Input Validation:** All inputs validated before processing
+- **Error Handling:** Graceful error handling with informative messages
+
+---
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.

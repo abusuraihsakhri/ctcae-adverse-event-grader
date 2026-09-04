@@ -50,14 +50,30 @@ def assess_row(row):
     return calculate_score(present)
 
 def process_csv(inp,out):
+    """Process a CSV file and write results. Returns list of result dicts."""
     import csv
+    import os
+
+    if not os.path.isfile(inp):
+        raise FileNotFoundError(f"Input CSV file not found: {inp}")
+
     with open(inp, newline="", encoding="utf-8-sig") as f:
-        r=csv.DictReader(f); rows=list(r); fn=r.fieldnames
+        r=csv.DictReader(f)
+        fn=r.fieldnames
+        if not fn:
+            raise ValueError(f"Input CSV file has no headers: {inp}")
+        rows=list(r)
+
     results=[]
     for row in rows:
         res=assess_row(row)
         merged={**row, "score": res["score"], "tier": res["tier"], "detail": ";".join(res["detail"].keys())}
         results.append(merged)
+
+    out_dir = os.path.dirname(out)
+    if out_dir and not os.path.isdir(out_dir):
+        os.makedirs(out_dir, exist_ok=True)
+
     with open(out,"w",newline="",encoding="utf-8") as f:
         w=csv.DictWriter(f, fieldnames=list(fn)+["score","tier","detail"]); w.writeheader(); w.writerows(results)
     return results

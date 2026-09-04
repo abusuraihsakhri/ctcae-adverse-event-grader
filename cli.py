@@ -80,21 +80,36 @@ def main(argv=None):
         return 0
 
     if args.command == "batch":
+        import os
+        if not os.path.isfile(args.input):
+            print(f"Error: Input file not found: {args.input}", file=sys.stderr)
+            return 1
+
         with open(args.input, mode="r", encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
             fieldnames = list(reader.fieldnames or [])
+            if not fieldnames:
+                print(f"Error: Input CSV has no headers: {args.input}", file=sys.stderr)
+                return 1
             rows = list(reader)
 
         out_fields = fieldnames + ["overall_urgency", "integrity_status", "total_alerts", "audit_hash"]
         out_rows = []
         for r in rows:
+            try:
+                primary = float(r.get("primary_metric", 15.0))
+                secondary = float(r.get("secondary_metric", 5.0))
+            except (ValueError, TypeError) as e:
+                print(f"Error: Invalid metric value in row {r}: {e}", file=sys.stderr)
+                return 1
+
             payload = SystemTaskPayload(
                 task_id=r.get("task_id", "TASK-01"),
                 target_identifier=r.get("target_identifier", "TARGET-01"),
-                primary_metric=float(r.get("primary_metric", 15.0)),
-                secondary_metric=float(r.get("secondary_metric", 5.0)),
+                primary_metric=primary,
+                secondary_metric=secondary,
                 status_descriptor=r.get("status_descriptor", "NOMINAL"),
-                is_critical_flag=bool(r.get("is_critical_flag", False)),
+                is_critical_flag=str(r.get("is_critical_flag", "")).lower() in ("1", "true", "yes"),
             )
             dossier = supervisor.process_task(payload)
             row_dict = dict(r)
@@ -103,6 +118,10 @@ def main(argv=None):
             row_dict["total_alerts"] = dossier.total_alerts
             row_dict["audit_hash"] = dossier.audit_hash
             out_rows.append(row_dict)
+
+        out_dir = os.path.dirname(args.output)
+        if out_dir and not os.path.isdir(out_dir):
+            os.makedirs(out_dir, exist_ok=True)
 
         with open(args.output, mode="w", encoding="utf-8", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=out_fields)
