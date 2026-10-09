@@ -79,7 +79,7 @@ def process_csv(inp,out):
     return results
 
 def build_parser():
-    p=argparse.ArgumentParser(prog="ctcae", description="CTCAE Adverse Event Grader")
+    p=argparse.ArgumentParser(prog="ctcae-legacy", description="Legacy non-CTCAE illustrative factor scoring")
     sub=p.add_subparsers(dest="cmd", required=True)
     s=sub.add_parser("single"); s.add_argument("--age", type=float); s.add_argument("--sex"); 
     for name,_ in FACTORS:
