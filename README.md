@@ -1,5 +1,7 @@
 # CTCAE Adverse Event Grader
 
+### [Open the Live Application →](https://abusuraihsakhri.github.io/ctcae-adverse-event-grader/)
+
 A small reference calculator for **two selected NCI CTCAE v5.0 laboratory adverse-event terms**, plus preserved legacy demonstration components. The browser app works locally without a backend, account, or external service.
 
 ## Supported grading
@@ -13,7 +15,7 @@ Counts at or above the laboratory lower limit of normal are reported as **no gra
 
 **Scope and safety:** This is a reference implementation, not a comprehensive CTCAE dictionary, medical device, treatment algorithm, or validated clinical decision support system. Verify adverse-event terminology and severity against your study protocol, current applicable CTCAE version, and clinical circumstances. No dose modification or clinical triage is calculated.
 
-Reference: [NCI CTCAE v5.0, 27 November 2017 — Investigations](https://dctd.cancer.gov/research/ctep-trials/for-sites/adverse-events/ctcae-v5-8x11.pdf). This project deliberately implements **v5.0**; consult the [NCI adverse events resources](https://dctd.cancer.gov/research/ctep-trials/for-sites/adverse-events) for other releases.
+Reference: [NCI CTCAE v5.0, 27 November 2017 — Investigations](https://dctd.cancer.gov/research/ctep-trials/for-sites/adverse-events/ctcae-v5-8x11.pdf). This project deliberately implements **v5.0**, although NCI has released CTCAE v6.0; consult the [NCI adverse events resources](https://dctd.cancer.gov/research/ctep-trials/for-sites/adverse-events) for other releases.
 
 ## Browser application
 
@@ -21,7 +23,7 @@ Open `web/index.html` in a modern desktop or mobile browser. Select a CTCAE term
 
 **Privacy:** The static browser calculator performs calculations in JavaScript. It makes no API requests, does not retain results in browser storage, and does not transmit results. Session records are kept only in the active tab's memory until reload/close. Avoid patient identifiers in research exports.
 
-GitHub Pages deployment is defined in `.github/workflows/pages.yml`; a live link will be added only after the site is verified.
+GitHub Pages publishes the self-contained `web/` application through `.github/workflows/pages.yml`.
 
 ## Python commands
 

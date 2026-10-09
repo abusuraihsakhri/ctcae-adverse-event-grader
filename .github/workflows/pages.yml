@@ -33,3 +33,22 @@ jobs:
           path: web
       - id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Verify published HTML and JavaScript
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          base="${PAGE_URL%/}"
+          for attempt in $(seq 1 12); do
+            if curl --fail --silent --show-error --location --max-time 15 "$base/" -o "$RUNNER_TEMP/ctcae-page.html" \
+              && curl --fail --silent --show-error --location --max-time 15 "$base/app.js" -o "$RUNNER_TEMP/ctcae-app.js" \
+              && grep -q 'id="grade-form"' "$RUNNER_TEMP/ctcae-page.html" \
+              && grep -q 'function gradeEvent' "$RUNNER_TEMP/ctcae-app.js"; then
+              echo "Verified deployed HTML and JavaScript at $base/"
+              exit 0
+            fi
+            echo "Waiting for Pages publication (attempt $attempt of 12)"
+            sleep 10
+          done
+          echo "Pages site failed post-deployment HTTP smoke test"
+          exit 1
