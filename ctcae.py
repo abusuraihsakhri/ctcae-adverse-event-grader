@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 CTCAE Adverse Event Grader
-CTCAE v5 grading for 20 common AEs from lab/vital thresholds.
-Points-based score with tiered action thresholds. Stdlib only.
+Legacy illustrative vascular-factor score, NOT validated CTCAE grading.
+For supported NCI CTCAE v5 grading, use ctcae_grading.py.
 """
 import argparse, csv, sys
 
