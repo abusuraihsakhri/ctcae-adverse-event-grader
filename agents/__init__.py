@@ -1,7 +1,2 @@
-"""
-Ctcae Adverse Event Grader — Enterprise Automated Analytical Suite.
-Domain: Radiology & Neuroimaging Systems
-Standard: ACR RADS / Fleischner Society / ASPECTS Guidelines
-
-"""
-__version__ = "3.0.0-ENTERPRISE"
+"""CTCAE v5.0 selected laboratory grading and legacy demonstration helpers."""
+__version__ = "3.0.1"
