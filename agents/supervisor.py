@@ -2,6 +2,7 @@
 Supervisor Orchestrator & Operations Intelligence for Ctcae Adverse Event Grader.
 Domain: Radiology & Neuroimaging Systems
 """
+import json
 import uuid
 from typing import Dict, Any, List, Optional
 from .base import AuditLogger, ActionExecutor, PHIGuard
@@ -25,6 +26,7 @@ class SystemSupervisor:
         PHIGuard.assert_no_phi(payload.task_id)
         PHIGuard.assert_no_phi(payload.target_identifier)
         PHIGuard.assert_no_phi(payload.status_descriptor)
+        PHIGuard.assert_no_phi(json.dumps(payload.attributes, ensure_ascii=False))
 
         # Multi-worker evaluations
         all_alerts: List[AgentAlert] = []
@@ -75,5 +77,5 @@ class SystemSupervisor:
 
     def query_supervisory_chat(self, query: str) -> str:
         PHIGuard.assert_no_phi(query)
-        prompt = f"Supervisor inquiry for Ctcae Adverse Event Grader under ACR RADS / Fleischner Society / ASPECTS Guidelines: {query}"
+        prompt = f"Supervisor inquiry for Ctcae Adverse Event Grader in nonclinical demonstration mode: {query}"
         return self.llm.invoke(prompt)
