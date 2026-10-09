@@ -1,7 +1,7 @@
 {
   "suite_name": "Ctcae Adverse Event Grader Golden Benchmark Test Suite",
   "system_slug": "ctcae-adverse-event-grader",
-  "standard_reference": "CAP / CLSI / NIST Standards",
+  "standard_reference": "Unvalidated demonstration thresholds (not CTCAE)",
   "test_cases": [
     {
       "case_id": "BENCH-01-NOMINAL",
