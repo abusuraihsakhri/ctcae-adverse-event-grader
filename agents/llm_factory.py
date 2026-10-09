@@ -1,31 +1,24 @@
-"""
-Inference Engine supporting local Ollama, Claude, OpenAI, and deterministic Mock with Zero-PHI checks.
-"""
-from typing import Dict, Any, Optional
+"""Deterministic mock client. No remote model providers are configured."""
 from .base import PHIGuard
 
 
 class MockLLM:
-    def __init__(self, system_name: str = "Ctcae Adverse Event Grader"):
+    def __init__(self, system_name: str = "CTCAE Adverse Event Grader"):
         self.system_name = system_name
 
     def invoke(self, prompt: str) -> str:
         PHIGuard.assert_no_phi(prompt)
-        return f"[{self.system_name} Deterministic Verification Engine]: Clinical & scientific analysis verified for query: '{prompt[:60]}...'. Parameters evaluated under ACR RADS / Fleischner Society / ASPECTS Guidelines."
+        return (
+            f"[{self.system_name} mock mode] No clinical analysis, CTCAE grading, "
+            "external model inference, or guideline verification was performed."
+        )
 
 
 class LLMFactory:
-    """Creates configured LLM client instances with zero-PHI protection."""
+    """Return an explicit mock; do not misrepresent unsupported providers."""
 
     @staticmethod
-    def create(provider: str = "mock", system_name: str = "Ctcae Adverse Event Grader"):
-        prov = str(provider).lower()
-        if prov in ["mock", "deterministic", "test"]:
-            return MockLLM(system_name)
-        elif prov in ["ollama", "local"]:
-            return MockLLM(system_name)
-        elif prov in ["claude", "anthropic"]:
-            return MockLLM(system_name)
-        elif prov in ["openai", "gpt4"]:
-            return MockLLM(system_name)
+    def create(provider: str = "mock", system_name: str = "CTCAE Adverse Event Grader"):
+        if str(provider).lower() not in {"mock", "deterministic", "test"}:
+            raise ValueError("Only the local deterministic mock provider is supported")
         return MockLLM(system_name)
