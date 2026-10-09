@@ -36,3 +36,27 @@ jobs:
         run: |
           node --check web/app.js
           node --test web/app.test.cjs
+
+  docker-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build production image
+        run: docker build -t ctcae-test .
+      - name: Start and probe health endpoint
+        run: |
+          docker run -d --name ctcae-api -p 127.0.0.1:8000:8000 \
+            -e API_KEY=ci-test-key -e AUDIT_SECRET_KEY=ci-test-audit-key ctcae-test
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8000/health; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs ctcae-api
+          exit 1
+      - name: Verify authenticated route
+        run: |
+          curl --fail --show-error -X POST http://127.0.0.1:8000/api/ctcae/grade \
+            -H 'Content-Type: application/json' -H 'X-API-Key: ci-test-key' \
+            -d '{"term":"Neutrophil count decreased","value":900,"lln":1800}' | grep '"grade":3'
