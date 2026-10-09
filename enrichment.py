@@ -1,6 +1,6 @@
 """
-Enrichment Feature Implementation for ctcae-adverse-event-grader.
-Generated based on domain-specific requirements in specifications.
+Nonclinical demonstration stubs; NOT CTCAE criteria or treatment guidance.
+Do not use these unvalidated outputs for patient care or regulatory reporting.
 """
 from dataclasses import dataclass, field
 from typing import Dict, Any, List, Optional, Tuple

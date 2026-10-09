@@ -1,40 +1,62 @@
-name: Ctcae Adverse Event Grader CI/CD & Security Verification
+name: CTCAE CI
 
 on:
   push:
-    branches: [ master, main ]
+    branches: [master]
   pull_request:
-    branches: [ master, main ]
+    branches: [master]
+
+permissions:
+  contents: read
 
 jobs:
-  test-and-audit:
+  test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
-
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install package and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+          python -m pip check
+      - name: Check Python syntax
+        run: python -m compileall -q agents cli.py ctcae.py ctcae_grading.py enrichment.py simulator.py
+      - name: Run tests
+        run: python -m pytest -q
+      - name: Check packaged command
+        run: ctcae-grade grade --term "Neutrophil count decreased" --value 900 --lln 1800
+      - name: Check browser JavaScript
+        run: |
+          node --check web/app.js
+          node --test web/app.test.cjs
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install fastapi uvicorn pydantic pytest
-
-    - name: Run Pytest Suite
-      run: |
-        pytest -v
-
-    - name: Security SAST & Zero-PHI Audit
-      run: |
-        python -c "
-        from agents.base import PHIGuard, AuditLogger
-        import pytest
-        assert AuditLogger.verify_integrity() is True
-        print('Security & Zero-PHI Audit Passed!')
-        "
+  docker-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build production image
+        run: docker build -t ctcae-test .
+      - name: Start and probe health endpoint
+        run: |
+          docker run -d --name ctcae-api -p 127.0.0.1:8000:8000 \
+            -e API_KEY=ci-test-key -e AUDIT_SECRET_KEY=ci-test-audit-key ctcae-test
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8000/health; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs ctcae-api
+          exit 1
+      - name: Verify authenticated route
+        run: |
+          curl --fail --show-error -X POST http://127.0.0.1:8000/api/ctcae/grade \
+            -H 'Content-Type: application/json' -H 'X-API-Key: ci-test-key' \
+            -d '{"term":"Neutrophil count decreased","value":900,"lln":1800}' | grep '"grade":3'

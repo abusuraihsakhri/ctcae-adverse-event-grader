@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 CTCAE Adverse Event Grader
-CTCAE v5 grading for 20 common AEs from lab/vital thresholds.
-Points-based score with tiered action thresholds. Stdlib only.
+Legacy illustrative vascular-factor score, NOT validated CTCAE grading.
+For supported NCI CTCAE v5 grading, use ctcae_grading.py.
 """
 import argparse, csv, sys
 
@@ -79,7 +79,7 @@ def process_csv(inp,out):
     return results
 
 def build_parser():
-    p=argparse.ArgumentParser(prog="ctcae", description="CTCAE Adverse Event Grader")
+    p=argparse.ArgumentParser(prog="ctcae-legacy", description="Legacy non-CTCAE illustrative factor scoring")
     sub=p.add_subparsers(dest="cmd", required=True)
     s=sub.add_parser("single"); s.add_argument("--age", type=float); s.add_argument("--sex"); 
     for name,_ in FACTORS:
