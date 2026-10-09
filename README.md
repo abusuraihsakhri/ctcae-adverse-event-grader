@@ -40,7 +40,7 @@ To grade a CSV:
 ctcae-grade batch --input counts.csv --output graded.csv
 ```
 
-Input columns: `term,value,lln`. Additional fields are preserved; output adds `ctcae_grade,ctcae_version,grade_status`. Unsupported terms, malformed rows, duplicate headers, invalid values, and nonfinite numbers are rejected rather than silently graded.
+Input columns: `term,value,lln` (see `sample_ctcae.csv`). Additional fields are preserved; output adds `ctcae_grade,ctcae_version,grade_status`. Unsupported terms, malformed rows, duplicate headers, invalid values, and nonfinite numbers are rejected rather than silently graded.
 
 **Legacy compatibility:** `ctcae.py` (`calculate_score`, `process_csv`, `single`, and `batch`), the `ctcae` command (`audit`, `batch`, `chat`, `verify-audit`, `serve`), and `enrichment.py` remain available. Their historical arbitrary score/alert thresholds **are not CTCAE grading rules or validated clinical scores**. The chat feature returns a deterministic mock response; it does not call an external language model or verify guidelines.
 
