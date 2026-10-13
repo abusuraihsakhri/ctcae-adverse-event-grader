@@ -86,8 +86,8 @@ def test_rejects_boolean_counts(value, lln):
 def test_csv_escapes_spreadsheet_formulas_in_passthrough_fields(tmp_path):
     source, target = tmp_path / "untrusted.csv", tmp_path / "graded.csv"
     source.write_text(
-        "case,comment,term,value,lln\\n"
-        '"=1+2","  @SUM(1,2)",Neutrophil count decreased,9e2,+1800\\n',
+        "case,comment,term,value,lln\n"
+        '"=1+2","  @SUM(1,2)",Neutrophil count decreased,9e2,+1800\n',
         encoding="utf-8",
     )
     assert process_ctcae_csv(str(source), str(target)) == 1
