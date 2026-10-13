@@ -23,6 +23,14 @@ TERMS = {
 SOURCE_URL = "https://dctd.cancer.gov/research/ctep-trials/for-sites/adverse-events/ctcae-v5-8x11.pdf"
 
 
+def _spreadsheet_safe(value: str) -> str:
+    """Prevent spreadsheet formula interpretation in passthrough CSV columns."""
+    stripped = value.lstrip(" \\t\\r\\n")
+    if value and (value[0] in "=+-@\\t\\r\\n" or stripped.startswith(("=", "+", "-", "@"))):
+        return "'" + value
+    return value
+
+
 def grade_lab_event(term: str, value: float, lln: float) -> dict:
     """Return the CTCAE v5 grade (1-4), or None if value is not below LLN.
 
@@ -32,6 +40,8 @@ def grade_lab_event(term: str, value: float, lln: float) -> dict:
     """
     if term not in TERMS:
         raise ValueError(f"Unsupported CTCAE term: {term!r}. Choose one of: {', '.join(TERMS)}")
+    if isinstance(value, bool) or isinstance(lln, bool):
+        raise ValueError("value and lln must be finite numbers, not booleans")
     try:
         measured, lower_limit = float(value), float(lln)
     except (TypeError, ValueError) as exc:
@@ -87,8 +97,14 @@ def process_ctcae_csv(input_path: str, output_path: str) -> int:
                 result = grade_lab_event(row["term"], row["value"], row["lln"])
             except ValueError as exc:
                 raise ValueError(f"Row {row_number}: {exc}") from exc
+            safe_row = {key: _spreadsheet_safe(raw) if key not in ("term", "value", "lln") else raw
+                        for key, raw in row.items()}
+            # Normalize validated measurement columns to numeric values, preventing
+            # spreadsheet formula interpretation of string-form numeric inputs.
+            safe_row["value"] = result["value"]
+            safe_row["lln"] = result["lln"]
             rows.append({
-                **row,
+                **safe_row,
                 "ctcae_grade": "" if result["grade"] is None else result["grade"],
                 "ctcae_version": result["ctcae_version"],
                 "grade_status": result["status"],
