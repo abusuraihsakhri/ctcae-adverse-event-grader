@@ -35,7 +35,7 @@ test("Rejects nonfinite, negative, unsupported and missing inputs", () => {
 
 
 test("Rejects whitespace-only, boolean, hexadecimal, and array counts", () => {
-  for (const invalid of ["  ", "\\t", true, false, "0x10", [], {}, "1,000"]) {
+  for (const invalid of ["  ", "\t", true, false, "0x10", [], {}, "1,000"]) {
     assert.throws(() => gradeEvent("Neutrophil count decreased", invalid, 1800));
     assert.throws(() => gradeEvent("Neutrophil count decreased", 900, invalid));
   }
