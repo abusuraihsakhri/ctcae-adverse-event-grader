@@ -23,8 +23,10 @@ TERMS = {
 SOURCE_URL = "https://dctd.cancer.gov/research/ctep-trials/for-sites/adverse-events/ctcae-v5-8x11.pdf"
 
 
-def _spreadsheet_safe(value: str) -> str:
+def _spreadsheet_safe(value: str | None) -> str:
     """Prevent spreadsheet formula interpretation in passthrough CSV columns."""
+    if value is None:
+        return ""
     stripped = value.lstrip(" \t\r\n")
     if value and (value[0] in "=+-@\t\r\n" or stripped.startswith(("=", "+", "-", "@"))):
         return "'" + value
