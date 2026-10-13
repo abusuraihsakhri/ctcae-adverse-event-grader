@@ -73,3 +73,54 @@ def test_batch_fails_closed(tmp_path, contents):
 def test_cli_single(capsys):
     assert main(["grade", "--term", "Neutrophil count decreased", "--value", "500", "--lln", "1800"]) == 0
     assert '"grade": 3' in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("value,lln", [
+    (True, 1800), (False, 1800), (900, True), (900, False),
+])
+def test_rejects_boolean_counts(value, lln):
+    with pytest.raises(ValueError, match="booleans"):
+        grade_lab_event("Neutrophil count decreased", value, lln)
+
+
+def test_csv_escapes_spreadsheet_formulas_in_passthrough_fields(tmp_path):
+    source, target = tmp_path / "untrusted.csv", tmp_path / "graded.csv"
+    source.write_text(
+        "case,comment,term,value,lln\n"
+        '"=1+2","  @SUM(1,2)",Neutrophil count decreased,9e2,+1800\n',
+        encoding="utf-8",
+    )
+    assert process_ctcae_csv(str(source), str(target)) == 1
+    with target.open(newline="", encoding="utf-8") as stream:
+        row = next(csv.DictReader(stream))
+    assert row["case"] == "'=1+2"
+    assert row["comment"] == "'  @SUM(1,2)"
+    assert row["value"] == "900.0"
+    assert row["lln"] == "1800.0"
+    assert row["ctcae_grade"] == "3"
+
+
+def test_csv_missing_optional_field_is_exported_empty(tmp_path):
+    source, target = tmp_path / "optional.csv", tmp_path / "graded.csv"
+    source.write_text(
+        "case,term,value,lln,comment\n"
+        "C1,Neutrophil count decreased,900,1800\n",
+        encoding="utf-8",
+    )
+    assert process_ctcae_csv(str(source), str(target)) == 1
+    with target.open(newline="", encoding="utf-8") as stream:
+        row = next(csv.DictReader(stream))
+    assert row["comment"] == ""
+    assert row["ctcae_grade"] == "3"
+
+
+def test_csv_missing_required_field_fails_closed(tmp_path):
+    source, target = tmp_path / "missing.csv", tmp_path / "graded.csv"
+    source.write_text(
+        "case,term,value,lln,comment\n"
+        "C1,Neutrophil count decreased,900\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError):
+        process_ctcae_csv(str(source), str(target))
+    assert not target.exists()

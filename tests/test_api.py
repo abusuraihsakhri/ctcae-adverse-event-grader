@@ -50,3 +50,13 @@ def test_attributes_sensitive_id_blocked(monkeypatch):
     })
     assert resp.status_code == 422
     assert "pattern" not in resp.text.lower()
+
+
+def test_rejects_boolean_api_measurements(monkeypatch):
+    monkeypatch.setenv("API_KEY", "test-only-api-key")
+    headers = {"X-API-Key": "test-only-api-key"}
+    for payload in [
+        {"term": "Neutrophil count decreased", "value": True, "lln": 1800},
+        {"term": "Neutrophil count decreased", "value": 900, "lln": False},
+    ]:
+        assert client.post("/api/ctcae/grade", json=payload, headers=headers).status_code == 422

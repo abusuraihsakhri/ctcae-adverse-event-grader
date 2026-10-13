@@ -3,7 +3,7 @@ import os
 import secrets
 
 from fastapi import Depends, FastAPI, Header, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from ctcae_grading import grade_lab_event
 from .base import AuditLogger, PHIGuard, SecurityException
@@ -34,6 +34,13 @@ class LabGradeRequest(BaseModel):
     term: str = Field(min_length=1, max_length=100)
     value: float = Field(allow_inf_nan=False, ge=0)
     lln: float = Field(allow_inf_nan=False, gt=0)
+
+    @field_validator("value", "lln", mode="before")
+    @classmethod
+    def reject_boolean_counts(cls, value):
+        if isinstance(value, bool):
+            raise ValueError("Counts must be numerical values, not booleans")
+        return value
 
 
 @app.get("/health")

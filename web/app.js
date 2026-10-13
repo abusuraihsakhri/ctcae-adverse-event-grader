@@ -7,16 +7,26 @@ const LAB_TERMS = Object.freeze({
   "Platelet count decreased": Object.freeze([75000, 50000, 25000])
 });
 
+const DECIMAL_COUNT = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i;
+
+function parseCount(raw) {
+  if (typeof raw === "number") return raw;
+  if (typeof raw === "string" && DECIMAL_COUNT.test(raw.trim())) return Number(raw);
+  return NaN;
+}
+
 function gradeEvent(term, value, lln) {
   if (!Object.prototype.hasOwnProperty.call(LAB_TERMS, term)) {
     throw new Error("Select a supported CTCAE term.");
   }
   // Reject blank strings rather than converting them to zero.
-  if (value === "" || value === null || lln === "" || lln === null) {
+  if (value == null || lln == null ||
+      (typeof value === "string" && value.trim() === "") ||
+      (typeof lln === "string" && lln.trim() === "")) {
     throw new Error("A count and laboratory lower limit are required.");
   }
-  const measured = Number(value);
-  const lower = Number(lln);
+  const measured = parseCount(value);
+  const lower = parseCount(lln);
   if (!Number.isFinite(measured) || !Number.isFinite(lower) || measured < 0) {
     throw new Error("Enter finite, nonnegative numerical counts.");
   }
