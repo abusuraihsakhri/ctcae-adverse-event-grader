@@ -98,3 +98,29 @@ def test_csv_escapes_spreadsheet_formulas_in_passthrough_fields(tmp_path):
     assert row["value"] == "900.0"
     assert row["lln"] == "1800.0"
     assert row["ctcae_grade"] == "3"
+
+
+def test_csv_missing_optional_field_is_exported_empty(tmp_path):
+    source, target = tmp_path / "optional.csv", tmp_path / "graded.csv"
+    source.write_text(
+        "case,comment,term,value,lln\n"
+        "C1,hello,Neutrophil count decreased,900,1800\n"
+        "C2,,Neutrophil count decreased,900,1800\n"
+        "C3,Neutrophil count decreased,900,1800\n",
+        encoding="utf-8",
+    )
+    # Missing required count values still fail closed.
+    with pytest.raises(ValueError):
+        process_ctcae_csv(str(source), str(target))
+    assert not target.exists()
+
+    source.write_text(
+        "case,comment,term,value,lln\n"
+        "C1,hello,Neutrophil count decreased,900,1800\n"
+        "C2,,Neutrophil count decreased,900,1800\n",
+        encoding="utf-8",
+    )
+    assert process_ctcae_csv(str(source), str(target)) == 2
+    with target.open(newline="", encoding="utf-8") as stream:
+        rows = list(csv.DictReader(stream))
+    assert rows[1]["comment"] == ""
